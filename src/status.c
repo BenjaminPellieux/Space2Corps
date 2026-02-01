@@ -62,12 +62,11 @@ const char* get_status_color(SystemStatus status) {
     }
 }
 
-bool transition_to_status(SystemStatus *current_status, SystemStatus new_status) {
-    // Vérifier si la transition est valide
-    // (Vous pouvez ajouter des règles de transition spécifiques ici)
+
+void transition_to_status(SystemStatus *current_status, SystemStatus new_status) {
+    
+    printf("Transition from %d to  %d : %s\n",*current_status, new_status, get_status_name(new_status));
     *current_status = new_status;
-    printf("Transition to %s\n", get_status_name(new_status));
-    return true;
 }
 
 void display_current_status(SystemStatus status) {

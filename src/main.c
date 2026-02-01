@@ -18,24 +18,39 @@ void init_context(){
 
 }
 
+
+
+int handle_misson_status(SystemStatus status){
+    switch (status)
+    {
+        case LIMIT_SWITCH_ON:
+            set_servo_position(HINGE_OPEN);
+            return 0;
+
+        default:
+            return 1;
+    }
+
+}
+
 void control_task(void *pvParameters) {
     init_context();
-    init_servo();
-    
+    init_actuator();
+    set_servo_position(HINGE_CLOSE); // Tourner à 0°
+
     ESP_LOGI(TAG, "Début du contrôle du servo moteur");
+
+
 
     while (1) {
 
         display_current_status(mission_Ctx->current_status);
         printf("%s\n", mission_Ctx->mission_name);
-        // Tourner à 0°
-        ESP_LOGI(TAG,"hinge task");
-        set_servo_position(0);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        check_limit_switch();
 
-        // Tourner à 90°
-        set_servo_position(110);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        handle_misson_status(mission_Ctx->current_status);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+
     }
 }
 
@@ -44,7 +59,6 @@ void app_main(void)
     // Create tasks for each core
     ESP_LOGI(TAG, "app main");
 
-    //xTaskCreatePinnedToCore(wifi_task, "wifi_task", 4096, NULL, 5, NULL, 0); // Core 0 (HP)
     xTaskCreate(wifi_task, "wifi_task", 4096, NULL, 5, NULL);
     xTaskCreate(control_task, "control_task", 4096, NULL, 5, NULL);
 }

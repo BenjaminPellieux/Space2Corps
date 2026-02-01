@@ -30,7 +30,7 @@
 
     const char* get_status_name(SystemStatus status);
     const char* get_status_color(SystemStatus status);
-    bool transition_to_status(SystemStatus *current_status, SystemStatus new_status);
+    void transition_to_status(SystemStatus *current_status, SystemStatus new_status);
     void display_current_status(SystemStatus status);
 
 #endif // STATUS_H

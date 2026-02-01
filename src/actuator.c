@@ -1,7 +1,13 @@
-#include "hinge.h"
+#include "actuator.h"
 
-static const char *TAG = "ESP32-C6_HINGE";
+static const char *TAG = "ESP32-C6_ACTUATOR";
 
+
+
+void init_actuator(){
+    init_servo();
+    setup_limit_switch();
+}
 
 void init_servo() {
     // Configuration du timer PWM
@@ -28,50 +34,50 @@ void init_servo() {
 }
 
 
-uint32_t calculate_duty(uint32_t angle) {
-    if (angle < 0 || angle > SERVO_MAX_DEGREE) {
-        return 0;
-    }
+uint16_t calculate_duty(uint8_t degree) {
 
     // Calculer la largeur de l'impulsion en microsecondes
-    uint32_t pulse_width = SERVO_MIN_PULSEWIDTH + ((SERVO_MAX_PULSEWIDTH - SERVO_MIN_PULSEWIDTH) * angle) / SERVO_MAX_DEGREE;
-
-    // Calculer la période en microsecondes (1/fréquence * 1e6)
+    uint32_t pulse_width = SERVO_MIN_PULSEWIDTH + ((SERVO_PULSEWIDTH) * degree) / SERVO_MAX_DEGREE;
 
     // Calculer le rapport cyclique en fonction de la résolution (16 bits)
-    uint32_t duty = (pulse_width * (1 << 16)) / SEVOR_PERIOD_US;
+    return (pulse_width * (1 << 16)) / SEVOR_PERIOD_US;
 
-    return duty;
 }
 
-void set_servo_position(uint32_t degree) {
-    if (degree < 0 || degree > 180) {
-        ESP_LOGE(TAG, "Degré hors de la plage valide (0-180)");
-        return;
-    }
+void set_servo_position(uint8_t degree) {
+
 
     // Calculer la largeur de l'impulsion en fonction du degré
-    uint32_t duty = calculate_duty(degree);
+    uint16_t duty = calculate_duty(degree);
 
     // Définir le rapport cyclique
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
     ESP_LOGI(TAG, "Position à %d° \n Duty  = %d", degree, duty);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+
 }
 
-// void app_main(void) {
-//     // Initialiser le servo
-//     init_servo();
 
-//     ESP_LOGI(TAG, "Début du contrôle du servo moteur");
 
-    
-//         // Tourner à 0°
-//         set_servo_position(0);
-//         vTaskDelay(3000 / portTICK_PERIOD_MS);
 
-//         // Tourner à 90°
-//         set_servo_position(110);
-//         vTaskDelay(3000 / portTICK_PERIOD_MS);
 
-// }
+void setup_limit_switch() {
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << LIMIT_SWITCH_PIN),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&io_conf);
+}
+
+
+void check_limit_switch() {
+    printf("[DEBUG] %d\n",gpio_get_level(LIMIT_SWITCH_PIN));
+    if (gpio_get_level(LIMIT_SWITCH_PIN) == 0) {
+        transition_to_status(&mission_Ctx->current_status, LIMIT_SWITCH_ON);
+        printf("Limit switch triggered! Status changed to LIMIT_SWITCH_ON\n");
+    }
+}

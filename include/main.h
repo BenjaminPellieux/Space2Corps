@@ -28,7 +28,7 @@
     #include "lwip/sys.h"
 
 
-    #include "hinge.h"
+    #include "actuator.h"
     #include "wifi.h"
     #include "status.h"
 
@@ -48,8 +48,14 @@
 
     } Mission_Ctx;
 
+
+
+    extern Mission_Ctx* mission_Ctx;  
+
     void app_main();
     void control_task(void *pvParameters);
     void init_context();
+    int handle_misson_status(SystemStatus status);
+
 
 #endif
