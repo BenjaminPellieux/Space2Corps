@@ -75,7 +75,6 @@ void setup_limit_switch() {
 
 
 void check_limit_switch() {
-    printf("[DEBUG] %d\n",gpio_get_level(LIMIT_SWITCH_PIN));
     if (gpio_get_level(LIMIT_SWITCH_PIN) == 0) {
         transition_to_status(&mission_Ctx->current_status, LIMIT_SWITCH_ON);
         printf("Limit switch triggered! Status changed to LIMIT_SWITCH_ON\n");
