@@ -4,6 +4,7 @@
 
 
     typedef enum {
+        FLOOR,
         ASCENT,
         PRE_SEPARATION_WAKE_UP,
         SEPARATION,

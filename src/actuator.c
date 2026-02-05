@@ -3,11 +3,47 @@
 static const char *TAG = "ESP32-C6_ACTUATOR";
 
 
-
 void init_actuator(){
     init_servo();
     setup_limit_switch();
+    init_motor_gpio();
 }
+
+
+void init_motor_gpio() {
+
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << STEP_PIN) | (1ULL << DIR_PIN) |
+                        (1ULL << ENABLE_PIN)   | (1ULL << M0_PIN)  |
+                        (1ULL << M1_PIN)   | (1ULL << M2_PIN),
+        .mode = GPIO_MODE_OUTPUT,
+    };
+    gpio_config(&io_conf);
+
+    // Activation du driver (EN active LOW)
+    gpio_set_level(ENABLE_PIN, 0);
+
+    // 1/16 step
+    gpio_set_level(M0_PIN, 1);
+    gpio_set_level(M1_PIN, 1);
+    // gpio_set_level(M2_PIN, 1);
+
+    ESP_LOGI(TAG, "DRV8825 initialisé en 1/16 step, EN activé");
+}
+
+void rotate_steps(int steps, bool direction) {
+    gpio_set_level(DIR_PIN, direction ? 1 : 0);
+    for (int i = 0; i < steps; i++) {
+        gpio_set_level(STEP_PIN, 1);
+        esp_rom_delay_us(10);
+        gpio_set_level(STEP_PIN, 0);
+        esp_rom_delay_us(STEP_DELAY_US);
+        if (i % 100 == 0) { // Nourrir le watchdog tous les 100 pas
+            esp_task_wdt_reset();
+        }
+    }
+}
+
 
 void init_servo() {
     // Configuration du timer PWM
