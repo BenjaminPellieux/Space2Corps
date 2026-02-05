@@ -32,15 +32,15 @@ void init_motor_gpio() {
 }
 
 void rotate_steps(int steps, bool direction) {
-    gpio_set_level(DIR_PIN, direction ? 1 : 0);
+    gpio_set_level(DIR_PIN, direction );
     for (int i = 0; i < steps; i++) {
         gpio_set_level(STEP_PIN, 1);
         esp_rom_delay_us(10);
         gpio_set_level(STEP_PIN, 0);
         esp_rom_delay_us(STEP_DELAY_US);
-        if (i % 100 == 0) { // Nourrir le watchdog tous les 100 pas
-            esp_task_wdt_reset();
-        }
+        // if (i % 100 == 0) { // Nourrir le watchdog tous les 100 pas
+        //     esp_task_wdt_reset();
+        // }
     }
 }
 

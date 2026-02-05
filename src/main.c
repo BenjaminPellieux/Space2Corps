@@ -21,14 +21,16 @@ void init_context(){
 int handle_misson_status(SystemStatus status){
 
     if (mission_Ctx->current_status < LIMIT_SWITCH_ON) {
-            ESP_LOGI(TAG, "Début rotation horaire");
-            rotate_steps(STEPS_PER_REVOLUTION, 1);
+            ESP_LOGI(TAG, "Début rotation anti-horaire");
+            rotate_steps(STEPS_PER_REVOLUTION, 0);
             return 0;
     }    
     switch (status)
     {
         case LIMIT_SWITCH_ON:
             ESP_LOGI(TAG, "Fin de course détectée, ouverture du servo");
+            gpio_set_level(ENABLE_PIN, 1);
+
             vTaskDelay(pdMS_TO_TICKS(1000));
             set_servo_position(HINGE_OPEN);
             return 0;
