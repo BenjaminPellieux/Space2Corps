@@ -22,15 +22,15 @@ int handle_misson_status(SystemStatus status){
 
     if (mission_Ctx->current_status < LIMIT_SWITCH_ON) {
             ESP_LOGI(TAG, "Début rotation anti-horaire");
-            rotate_steps(STEPS_PER_REVOLUTION, 0);
+            
+            rotate_steps(STEPS_PER_REVOLUTION, 1);
+
             return 0;
     }    
     switch (status)
     {
         case LIMIT_SWITCH_ON:
             ESP_LOGI(TAG, "Fin de course détectée, ouverture du servo");
-            gpio_set_level(ENABLE_PIN, 1);
-
             vTaskDelay(pdMS_TO_TICKS(1000));
             set_servo_position(HINGE_OPEN);
             return 0;
@@ -43,13 +43,17 @@ int handle_misson_status(SystemStatus status){
 }
 
 void control_task(void *pvParameters) {
+    
+
     init_context();
     init_actuator();
     set_servo_position(HINGE_CLOSE); // Tourner à 0°
+    
 
     ESP_LOGI(TAG, "Début du contrôle du servo moteur");
 
     ESP_LOGI(TAG, "Attente initiale de %d secondes", INITIAL_DELAY/1000);
+    
     for (int i = 0; i < 5; i++) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -58,12 +62,8 @@ void control_task(void *pvParameters) {
 
         display_current_status(mission_Ctx->current_status);
         printf("%s\n", mission_Ctx->mission_name);
-        check_limit_switch();
-
-        
         handle_misson_status(mission_Ctx->current_status);
         vTaskDelay(10 / portTICK_PERIOD_MS);
-
     }
 }
 

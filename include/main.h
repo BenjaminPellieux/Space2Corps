@@ -39,7 +39,10 @@
     #define BLUE    "\033[34m"
     #define MAGENTA "\033[35m"
     #define GREEN   "\033[32m"
+ 
 
+    #define TRUE 1
+    #define FALSE 0
     #define MAX_SIZE_NAME 64
 
     typedef struct Mission_Ctx{

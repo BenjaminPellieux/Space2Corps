@@ -20,20 +20,21 @@
     #define SEVOR_PERIOD_US 20000       // Période en microsecondes (1/fréquence * 1e6)
     #define LIMIT_SWITCH_PIN GPIO_NUM_19
     #define HINGE_CLOSE 0
-    #define HINGE_OPEN 110
+    #define HINGE_OPEN 90
 
+    #define EN_PIN      GPIO_NUM_20
+    #define DIR_PIN     GPIO_NUM_21
+    #define STEP_PIN    GPIO_NUM_22
     #define M0_PIN      GPIO_NUM_10  // Microstepping
     #define M1_PIN      GPIO_NUM_11
     #define M2_PIN      GPIO_NUM_0
-    #define STEP_PIN    GPIO_NUM_22
-    #define DIR_PIN     GPIO_NUM_21
-    #define ENABLE_PIN  GPIO_NUM_20
+  
 
     // Configuration du moteur pas-à-pas
 
     // Configuration pour 1/8 step (1600 pas/rev)
     #define STEPS_PER_REVOLUTION 1600
-    #define STEP_DELAY_US 2000    // 2 ms entre chaque pas
+    #define STEP_DELAY_US 4000    // 2 ms entre chaque pas
 
     #define INITIAL_DELAY 5000 // Délai initiale de 5 secondes
 
@@ -46,8 +47,9 @@
     void set_servo_position(uint8_t degree);
     void init_motor_gpio();
     void setup_limit_switch();
-    void check_limit_switch();
+    // void limit_switch_isr_handler(void* arg);
 
+    bool check_limit_switch();
 
     void rotate_steps(int steps, bool direction);
 
