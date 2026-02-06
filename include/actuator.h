@@ -30,6 +30,11 @@
     #define M2_PIN      GPIO_NUM_0
   
 
+    typedef struct {
+    gpio_num_t step_pin;
+    gpio_num_t dir_pin;
+    // ... autres configurations
+} StepperConfig;
     // Configuration du moteur pas-à-pas
 
     // Configuration pour 1/8 step (1600 pas/rev)
@@ -47,7 +52,6 @@
     void set_servo_position(uint8_t degree);
     void init_motor_gpio();
     void setup_limit_switch();
-    // void limit_switch_isr_handler(void* arg);
 
     bool check_limit_switch();
 

@@ -2,7 +2,7 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
 
-static const char *TAG = "ESP32-C6_MAIN";
+static const char *TAG = "MASTER_MAIN";
 
 Mission_Ctx*  mission_Ctx;
 

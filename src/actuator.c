@@ -1,6 +1,6 @@
 #include "actuator.h"
 
-static const char *TAG = "ESP32-C6_ACTUATOR";
+static const char *TAG = "MASTER_ACTUATOR";
 volatile bool limit_switch_pressed = FALSE;
 
 

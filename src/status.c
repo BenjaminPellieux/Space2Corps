@@ -1,6 +1,6 @@
 #include "main.h"
 
-static const char *TAG = "ESP32-C6_STATUS";
+static const char *TAG = "MASTER_STATUS";
 
 
 const char* get_status_name(SystemStatus status) {
@@ -65,12 +65,12 @@ const char* get_status_color(SystemStatus status) {
 
 void transition_to_status(SystemStatus *current_status, SystemStatus new_status) {
     
-    printf("Transition from %d to  %d : %s\n",*current_status, new_status, get_status_name(new_status));
+    ESP_LOGI(TAG, "Transition from %d to  %d : %s\n",*current_status, new_status, get_status_name(new_status));
     *current_status = new_status;
 }
 
 void display_current_status(SystemStatus status) {
-    printf("Current Status: %s%s%s\n",
+    ESP_LOGI(TAG, "Current Status: %s%s%s\n",
            get_status_color(status),
            get_status_name(status),
            RESET);

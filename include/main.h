@@ -45,10 +45,22 @@
     #define FALSE 0
     #define MAX_SIZE_NAME 64
 
+
+    typedef struct IMUData {
+        float accel_x;
+        float accel_y;
+        float accel_z;
+        float gyro_x;
+        float gyro_y;
+        float gyro_z;
+        float temp;
+    } IMUData;
+
+
     typedef struct Mission_Ctx{
         char mission_name[MAX_SIZE_NAME];
         SystemStatus current_status;
-
+        IMUData imu_data;
     } Mission_Ctx;
 
 

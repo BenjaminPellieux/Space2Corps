@@ -1,7 +1,7 @@
 
 #include "wifi.h"
 
-static const char *TAG = "ESP32-C6_WIFI";
+static const char *TAG = "MASTER_WIFI";
 
 // Déclaration de la fonction de gestion des événements WiFi
 static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
