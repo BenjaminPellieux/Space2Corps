@@ -138,7 +138,7 @@ bool check_limit_switch() {
 
     if ((mission_Ctx->current_status < LIMIT_SWITCH_ON) && (gpio_get_level(LIMIT_SWITCH_PIN) == FALSE)) {
         vTaskDelay(500 / portTICK_PERIOD_MS);
-        mission_Ctx->current_status = LIMIT_SWITCH_ON;
+        transition_to_status(&mission_Ctx->current_status, LIMIT_SWITCH_ON);
         gpio_set_level(EN_PIN, 1);
         ESP_LOGI(TAG, "Limit switch déclenché, arrêt du moteur");
         return TRUE;

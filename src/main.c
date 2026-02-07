@@ -22,7 +22,7 @@ int handle_misson_status(SystemStatus status){
 
     if (mission_Ctx->current_status < LIMIT_SWITCH_ON) {
             ESP_LOGI(TAG, "Début rotation anti-horaire");
-            
+            transition_to_status(&mission_Ctx->current_status, COIL_WINDING);
             rotate_steps(STEPS_PER_REVOLUTION, 1);
 
             return 0;
@@ -33,6 +33,8 @@ int handle_misson_status(SystemStatus status){
             ESP_LOGI(TAG, "Fin de course détectée, ouverture du servo");
             vTaskDelay(pdMS_TO_TICKS(1000));
             set_servo_position(HINGE_OPEN);
+            transition_to_status(&mission_Ctx->current_status, OPEN_HINGE);
+
             return 0;
 
         default:

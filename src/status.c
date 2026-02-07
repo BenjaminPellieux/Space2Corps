@@ -63,9 +63,19 @@ const char* get_status_color(SystemStatus status) {
 }
 
 
+void check_transition(bool valid){
+
+} 
+
 void transition_to_status(SystemStatus *current_status, SystemStatus new_status) {
     
-    ESP_LOGI(TAG, "Transition from %d to  %d : %s\n",*current_status, new_status, get_status_name(new_status));
+    bool valid = *current_status < new_status;
+    ESP_LOGI(TAG, "Transition %s%s%s from %d to  %d : %s\n", valid ? GREEN : RED,
+                                                             valid ? "VALID" : "UNVALID", 
+                                                             RESET,
+                                                             *current_status, 
+                                                             new_status, 
+                                                             get_status_name(new_status));
     *current_status = new_status;
 }
 
