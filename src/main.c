@@ -1,6 +1,6 @@
 #include "main.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
-
+#define CONFIG_ESP_TASK_WDT_TIMEOUT_S 5
 
 static const char *TAG = "MASTER_MAIN";
 
@@ -15,6 +15,11 @@ void init_context(){
     }
     mission_Ctx->current_status = SYSTEM_CHECKOUT;
     strncpy(mission_Ctx->mission_name, "Space2Corps", MAX_SIZE_NAME);
+    mission_Ctx->motion_data.motion_initialized = false;
+
+    init_i2c();
+    init_motion_sensors();
+
 
 }
 
@@ -43,10 +48,13 @@ int handle_misson_status(SystemStatus status){
 }
 
 void control_task(void *pvParameters) {
-    
-
     init_context();
     init_actuator();
+    for (int i = 0; i < 5; i++) {
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
+
+
     set_servo_position(HINGE_CLOSE); // Tourner à 0°
     
 
@@ -61,8 +69,13 @@ void control_task(void *pvParameters) {
     while (1) {
 
         display_current_status(mission_Ctx->current_status);
-        printf("%s\n", mission_Ctx->mission_name);
-        handle_misson_status(mission_Ctx->current_status);
+        //handle_misson_status(mission_Ctx->current_status);
+        if (mission_Ctx->motion_data.motion_initialized) {
+            display_motion_data();
+        }else{
+        ESP_LOGE(TAG, "NO IMU DATA");
+        }
+
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
