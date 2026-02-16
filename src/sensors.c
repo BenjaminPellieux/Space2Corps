@@ -3,156 +3,197 @@
 static const char *TAG = "MASTER_SENSORS";
 
 
-// Initialisation de l'I2C
-void init_i2c() {
-    i2c_config_t conf = {};
+static i2c_master_bus_handle_t bus_handle;
+static i2c_master_dev_handle_t dev_handle;
+static uint8_t lsm6dsox_addr = LSM6DSOX_ADDR_1;
 
-    conf = (i2c_config_t){
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = I2C_MASTER_FREQ_HZ,
-    };
-    esp_err_t ret = i2c_param_config(I2C_NUM_0, &conf);
+motion_data = {0};
+
+static bool i2c_read_bytes(uint8_t reg, uint8_t *data, size_t len) {
+    esp_err_t ret = i2c_master_transmit_receive(dev_handle, &reg, 1, data, len, pdMS_TO_TICKS(1000));
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure I2C: %d", ret);
-        return;
-    }
-    ret = i2c_driver_install(I2C_NUM_0, conf.mode, 0, 0, 0);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to install I2C driver: %d", ret);
-    }
-    ESP_LOGI(TAG, "I2C driver installed %d:  sda: %d scl: %d freq: %d",I2C_MODE_MASTER, I2C_MASTER_SDA_IO, I2C_MASTER_SCL_IO, I2C_MASTER_FREQ_HZ);
-}
-
-void scan_i2c_bus() {
-    ESP_LOGI(TAG,"Scanning I2C bus...\n");
-    for (uint8_t i = 0; i < 128; i++) {
-        i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-        i2c_master_start(cmd);
-        i2c_master_write_byte(cmd, i << 1 | I2C_MASTER_WRITE, 1);
-        i2c_master_stop(cmd);
-        esp_err_t ret = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
-        i2c_cmd_link_delete(cmd);
-        ESP_LOGI(TAG, "SCAN %d", i); 
-
-        if (ret == ESP_OK) {
-            ESP_LOGI(TAG, "Device found at address 0x%02X\n", i);
-        
-        }
+        ESP_LOGE(TAG, "Erreur lors de la lecture I2C: %s", esp_err_to_name(ret));
     }
     
+    return ret == ESP_OK;
 }
 
 
-// Fonction pour lire un registre de l'ICM-20948
-void write_motion_sensors_register(uint8_t reg, uint8_t data) {
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, MPU9255_ADDRESS << 1 | I2C_MASTER_WRITE, 1);
-    i2c_master_write_byte(cmd, reg, 1);
-    i2c_master_write_byte(cmd, data, 1);
-    i2c_master_stop(cmd);
-    esp_err_t ret = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
-    i2c_cmd_link_delete(cmd);
+
+void init_i2c() {
+    // Configuration du bus I2C
+    i2c_master_bus_config_t i2c_mst_config = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = I2C_NUM_0,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
+    };
+
+    esp_err_t ret = i2c_new_master_bus(&i2c_mst_config, &bus_handle);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to write to Motion sensors register 0x%02X: %d", reg, ret);
+        ESP_LOGE(TAG, "Erreur lors de l'initialisation du bus I2C: %s", esp_err_to_name(ret));
+        motion_data.motion_initialized = false;
+        return;
     }
-    ESP_LOGI(TAG, "Write %d in motion senors at reg: %d", data, reg);
+
+    // Détection de l'adresse I2C du capteur
+    ret = i2c_master_probe(bus_handle, LSM6DSOX_ADDR_1, -1);
+    if (ret == ESP_OK) {
+        lsm6dsox_addr = LSM6DSOX_ADDR_1;
+        ESP_LOGI(TAG, "Capteur détecté à l'adresse 0x6A");
+    } else {
+        ret = i2c_master_probe(bus_handle, LSM6DSOX_ADDR_2, -1);
+        if (ret == ESP_OK) {
+            lsm6dsox_addr = LSM6DSOX_ADDR_2;
+            ESP_LOGI(TAG, "Capteur détecté à l'adresse 0x6B");
+        } else {
+            ESP_LOGE(TAG, "Aucun capteur LSM6DSOX détecté sur 0x6A ou 0x6B");
+            motion_data.motion_initialized = false;
+            return;
+        }
+    }
+
+    // Configuration du périphérique I2C
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = lsm6dsox_addr,
+        .scl_speed_hz = I2C_MASTER_FREQ_HZ,
+    };
+
+    ret = i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Erreur lors de l'ajout du périphérique I2C: %s", esp_err_to_name(ret));
+        motion_data.motion_initialized = false;
+        return;
+    }
+
+    motion_data.motion_initialized = true;
+}
+
+
+
+void scan_i2c_bus() {
+    if (!motion_data.motion_initialized) {
+        ESP_LOGE(TAG, "Bus I2C non initialisé");
+        return;
+    }
+    uint8_t who_am_i;
+    if (!i2c_read_bytes(WHO_AM_I_REG, &who_am_i, 1)) {
+        ESP_LOGE(TAG, "Erreur de lecture I2C lors de la vérification de l'ID");
+        return;
+    }
+
+    ESP_LOGI(TAG, "LSM6DSOX ID: 0x%02X", who_am_i);
+    if (who_am_i != 0x6C) {
+        ESP_LOGE(TAG, "Erreur: Capteur non détecté ou ID incorrect");
+        motion_data.motion_initialized = false;
+        return;
+    }
+}
+
+void write_motion_sensors_register(uint8_t reg, uint8_t data) {
+    if (!motion_data.motion_initialized) {
+        ESP_LOGE(TAG, "Bus I2C non initialisé");
+        return;
+    }
+
+    uint8_t write_buf[2] = {reg, data};
+    esp_err_t ret = i2c_master_transmit(dev_handle, write_buf, sizeof(write_buf), pdMS_TO_TICKS(1000));
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Erreur lors de l'écriture I2C: %s", esp_err_to_name(ret));
+    }
 }
 
 uint8_t read_motion_sensors_register(uint8_t reg) {
-    uint8_t data;
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, MPU9255_ADDRESS << 1 | I2C_MASTER_WRITE, 1);
-    i2c_master_write_byte(cmd, reg, 1);
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, MPU9255_ADDRESS << 1 | I2C_MASTER_READ, 1);
-    i2c_master_read_byte(cmd, &data, 1);
-    i2c_master_stop(cmd);
-    esp_err_t ret = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
-    i2c_cmd_link_delete(cmd);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read from Motion sensors register 0x%02X: %d", reg, ret);
+    if (!motion_data.motion_initialized) {
+        ESP_LOGE(TAG, "Bus I2C non initialisé");
         return 0;
     }
-    ESP_LOGI(TAG, "Read %d in motion sensors at reg: %d", data, reg);
+
+    uint8_t data;
+    esp_err_t ret = i2c_master_transmit_receive(dev_handle, &reg, 1, &data, 1, pdMS_TO_TICKS(1000));
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Erreur lors de la lecture I2C: %s", esp_err_to_name(ret));
+        return 0;
+    }
     return data;
 }
 
-// Initialisation de l'ICM-20948
 void init_motion_sensors() {
-    // Vérifier la connexion avec le MPU-9255
-    uint8_t who_am_i = read_motion_sensors_register(0x75); // WHO_AM_I register
-    if (who_am_i != 0x73) {
-        ESP_LOGE(TAG, "MPU-9255 not detected (WHO_AM_I = 0x%02X)", who_am_i);
-        mission_Ctx->motion_data.motion_initialized = false;
+    if (!motion_data.motion_initialized) {
+        ESP_LOGE(TAG, "Bus I2C non initialisé");
         return;
     }
+    // Effectuer un reset logiciel du capteur
+    write_motion_sensors_register(CTRL3_C_REG, 0x01);
+    vTaskDelay(pdMS_TO_TICKS(100)); // Attendre que le reset soit effectué
 
-    // Réveiller le MPU-9255
-    write_motion_sensors_register(0x6B, 0x00); // PWR_MGMT_1 register
+    // Configuration de l'accéléromètre (ODR=1.66kHz, FS=±2g)
+    write_motion_sensors_register(CTRL1_XL_REG, ACCEL_ODR_1660Hz);
 
-    // Configurer le gyroscope
-    write_motion_sensors_register(0x1B, 0x00); // GYRO_CONFIG register, ±250 dps
+    // Configuration du gyroscope (ODR=1.66kHz, FS=±2000dps)
+    write_motion_sensors_register(CTRL2_G_REG, GYRO_ODR_1660Hz);
 
-    // Configurer l'accéléromètre
-    write_motion_sensors_register(0x1C, 0x00); // ACCEL_CONFIG register, ±2g
+    // Activer le filtre passe-haut pour le gyroscope
+    write_motion_sensors_register(CTRL7_G_REG, 0x00);
 
-    // Configurer la fréquence d'échantillonnage
-    write_motion_sensors_register(0x19, 0x07); // SMPLRT_DIV register, 1 kHz
+    // Vérification des registres de configuration
+    uint8_t ctrl1_xl_val = read_motion_sensors_register(CTRL1_XL_REG);
+    uint8_t ctrl2_g_val = read_motion_sensors_register(CTRL2_G_REG);
 
-    mission_Ctx->motion_data.motion_initialized = true;
-    ESP_LOGI(TAG, "MPU-9255 initialized successfully");
+    ESP_LOGI(TAG, "CTRL1_XL configuré à: 0x%02X", ctrl1_xl_val);
+    ESP_LOGI(TAG, "CTRL2_G configuré à: 0x%02X", ctrl2_g_val);
 }
 
 void read_motion_data() {
-    if (!mission_Ctx->motion_data.motion_initialized) {
-        ESP_LOGE(TAG, "IMU not initialized");
+    if (!motion_data.motion_initialized) {
+        ESP_LOGE(TAG, "Bus I2C non initialisé");
         return;
     }
 
-    uint8_t data[14];
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, MPU9255_ADDRESS << 1 | I2C_MASTER_WRITE, 1);
-    i2c_master_write_byte(cmd, 0x3B, 1); // ACCEL_XOUT_H register
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, MPU9255_ADDRESS << 1 | I2C_MASTER_READ, 1);
-    i2c_master_read(cmd, data, 14, I2C_MASTER_LAST_NACK);
-    i2c_master_stop(cmd);
-    esp_err_t ret = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
-    i2c_cmd_link_delete(cmd);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read IMU data: %d", ret);
+    uint8_t data[6];
+
+    // Lecture des données d'accélération
+    if (!i2c_read_bytes(OUTX_L_XL_REG, data, 6)) {
+        ESP_LOGE(TAG, "Erreur de lecture des données d'accélération");
+        vTaskDelay(pdMS_TO_TICKS(100));
         return;
     }
 
-    // Lire les données de l'accéléromètre
-    mission_Ctx->motion_data.accel_x = (int16_t)((data[0] << 8) | data[1]) / 16384.0;
-    mission_Ctx->motion_data.accel_y = (int16_t)((data[2] << 8) | data[3]) / 16384.0;
-    mission_Ctx->motion_data.accel_z = (int16_t)((data[4] << 8) | data[5]) / 16384.0;
+    int16_t accel_x = (int16_t)((data[1] << 8) | data[0]);
+    int16_t accel_y = (int16_t)((data[3] << 8) | data[2]);
+    int16_t accel_z = (int16_t)((data[5] << 8) | data[4]);
 
-    // Lire les données du gyroscope
-    mission_Ctx->motion_data.gyro_x = (int16_t)((data[8] << 8) | data[9]) / 131.0;
-    mission_Ctx->motion_data.gyro_y = (int16_t)((data[10] << 8) | data[11]) / 131.0;
-    mission_Ctx->motion_data.gyro_z = (int16_t)((data[12] << 8) | data[13]) / 131.0;
+    // Lecture des données de gyroscope
+    if (!i2c_read_bytes(OUTX_L_G_REG, data, 6)) {
+        ESP_LOGE(TAG, "Erreur de lecture des données de gyroscope");
+        vTaskDelay(pdMS_TO_TICKS(100));
+        return;
+    }
+   
+    int16_t gyro_x = (int16_t)((data[1] << 8) | data[0]);
+    int16_t gyro_y = (int16_t)((data[3] << 8) | data[2]);
+    int16_t gyro_z = (int16_t)((data[5] << 8) | data[4]);
 
-    // Lire la température
-    int16_t temp_raw = (int16_t)((data[6] << 8) | data[7]);
-    mission_Ctx->motion_data.temp = (temp_raw / 340.0) + 36.53;
+    // Mise à jour des valeurs dans la structure
+    motion_data.accel_x = accel_x / 16384.0; // Conversion en g (pour une plage de ±2g)
+    motion_data.accel_y = accel_y / 16384.0;
+    motion_data.accel_z = accel_z / 16384.0;
+    motion_data.gyro_x = gyro_x / 16.4; // Conversion en dps (pour une plage de ±2000 dps)
+    motion_data.gyro_y = gyro_y / 16.4;
+    motion_data.gyro_z = gyro_z / 16.4;
+    
 }
 
 void display_motion_data() {
-    read_motion_data();
-    ESP_LOGI(TAG, "IMU Data - Accel: (%.2fg, %.2fg, %.2fg), Gyro: (%.2f°, %.2f°, %.2f°)",
-            mission_Ctx->motion_data.accel_x,
-            mission_Ctx->motion_data.accel_y,
-            mission_Ctx->motion_data.accel_z,
-            mission_Ctx->motion_data.gyro_x,
-            mission_Ctx->motion_data.gyro_y,
-            mission_Ctx->motion_data.gyro_z);
+    if (!motion_data.motion_initialized) {
+        ESP_LOGE(TAG, "Bus I2C non initialisé");
+        return;
+    }
+
+    printf("Accel: X=%.2f g Y=%.2f g Z=%.2f g | Gyro: X=%.2f dps Y=%.2f dps Z=%.2f dps\n",
+           motion_data.accel_x, motion_data.accel_y, motion_data.accel_z,
+           motion_data.gyro_x, motion_data.gyro_y, motion_data.gyro_z);
 }
