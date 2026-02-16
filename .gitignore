@@ -6,8 +6,4 @@
 .vscode/launch.json
 .vscode/ipch
 
-<<<<<<< HEAD
 sdkconfig.*
-=======
-sdkconfig.*
->>>>>>> 26f5266 (ADD sensors gyro accel)

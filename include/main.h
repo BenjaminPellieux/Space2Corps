@@ -54,6 +54,7 @@
         char mission_name[MAX_SIZE_NAME];
         SystemStatus current_status;
         MotionData motion_data;
+        GPSData gps_data;
     } Mission_Ctx;
 
 

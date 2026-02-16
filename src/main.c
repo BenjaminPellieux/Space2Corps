@@ -15,8 +15,9 @@ void init_context(){
     }
     mission_Ctx->current_status = SYSTEM_CHECKOUT;
     strncpy(mission_Ctx->mission_name, "Space2Corps", MAX_SIZE_NAME);
+    mission_Ctx->motion_data = (MotionData){0};
     mission_Ctx->motion_data.motion_initialized = false;
-
+    mission_Ctx->gps_data = (GPSData){0};
     init_i2c();
     init_motion_sensors();
 
