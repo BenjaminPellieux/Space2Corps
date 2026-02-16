@@ -31,6 +31,7 @@
     #include "actuator.h"
     #include "wifi.h"
     #include "status.h"
+    #include "sensors.h"
 
     // #include <EEPROM.h>
 
@@ -46,9 +47,19 @@
     #define MAX_SIZE_NAME 64
 
 
+<<<<<<< HEAD
     typedef struct Mission_Ctx{
         char mission_name[MAX_SIZE_NAME];
         SystemStatus current_status;
+=======
+
+
+
+    typedef struct Mission_Ctx{
+        char mission_name[MAX_SIZE_NAME];
+        SystemStatus current_status;
+        MotionData motion_data;
+>>>>>>> 665cfff (ADD sensors)
     } Mission_Ctx;
 
 
