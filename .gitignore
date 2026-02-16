@@ -6,4 +6,4 @@
 .vscode/launch.json
 .vscode/ipch
 
-sdkconfig.esp32-c6-devkitc-1
+sdkconfig.*
