@@ -39,7 +39,7 @@
 
     // Configuration pour 1/8 step (1600 pas/rev)
     #define STEPS_PER_REVOLUTION 1600
-    #define STEP_DELAY_US 4000    // 2 ms entre chaque pas
+    #define STEP_DELAY_US 4000    // 4 ms entre chaque pas
 
     #define INITIAL_DELAY 5000 // Délai initiale de 5 secondes
 
