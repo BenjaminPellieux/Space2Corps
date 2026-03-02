@@ -99,7 +99,6 @@ const char* get_status_color(SystemStatus status) {
     }
 }
 
-
 /**
  * @brief Transition to new mission status
  * 
