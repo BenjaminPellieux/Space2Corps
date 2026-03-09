@@ -64,6 +64,18 @@
 #define GPS_RX_GPIO GPIO_NUM_23   /**< GPIO23 for RX */
 #define GPS_BAUD 9600             /**< GPS baud rate */
 
+
+typedef struct MotionGyro{
+    float gyro_x;                  /**< X-axis rotation (dps) */
+    float gyro_y;                  /**< Y-axis rotation (dps) */
+    float gyro_z;                  /**< Z-axis rotation (dps) */
+} MotionGyro;
+
+typedef struct MotionAccel{
+    float accel_x;                 /**< X-axis acceleration (g) */
+    float accel_y;                 /**< Y-axis acceleration (g) */
+    float accel_z;                 /**< Z-axis acceleration (g) */
+} MotionAccel;
 /**
  * @brief Motion sensor data structure
  * 
@@ -71,12 +83,8 @@
  */
 typedef struct MotionData {
     bool motion_initialized;       /**< Initialization flag */
-    float accel_x;                 /**< X-axis acceleration (g) */
-    float accel_y;                 /**< Y-axis acceleration (g) */
-    float accel_z;                 /**< Z-axis acceleration (g) */
-    float gyro_x;                  /**< X-axis rotation (dps) */
-    float gyro_y;                  /**< Y-axis rotation (dps) */
-    float gyro_z;                  /**< Z-axis rotation (dps) */
+    MotionGyro motiongyro;
+    MotionAccel motionaccel;
     float temp;                    /**< Temperature (°C) */
 } MotionData;
 

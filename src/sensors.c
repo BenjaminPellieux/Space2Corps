@@ -271,12 +271,12 @@ void read_motion_data() {
     int16_t gyro_z = (int16_t)((data[5] << 8) | data[4]);
 
     // Update values in motion data structure
-    mission_Ctx->motion_data.accel_x = accel_x / 16384.0; // Convert to g (for ±2g range)
-    mission_Ctx->motion_data.accel_y = accel_y / 16384.0;
-    mission_Ctx->motion_data.accel_z = accel_z / 16384.0;
-    mission_Ctx->motion_data.gyro_x = gyro_x / 16.4; // Convert to dps (for ±2000 dps range)
-    mission_Ctx->motion_data.gyro_y = gyro_y / 16.4;
-    mission_Ctx->motion_data.gyro_z = gyro_z / 16.4;
+    mission_Ctx->motion_data.motionaccel.accel_x = accel_x / 16384.0; // Convert to g (for ±2g range)
+    mission_Ctx->motion_data.motionaccel.accel_y = accel_y / 16384.0;
+    mission_Ctx->motion_data.motionaccel.accel_z = accel_z / 16384.0;
+    mission_Ctx->motion_data.motiongyro.gyro_x = gyro_x / 16.4; // Convert to dps (for ±2000 dps range)
+    mission_Ctx->motion_data.motiongyro.gyro_y = gyro_y / 16.4;
+    mission_Ctx->motion_data.motiongyro.gyro_z = gyro_z / 16.4;
     
 }
 
@@ -294,8 +294,8 @@ void display_motion_data() {
     }
 
     printf("Accel: X=%.2f g Y=%.2f g Z=%.2f g | Gyro: X=%.2f dps Y=%.2f dps Z=%.2f dps\n",
-           mission_Ctx->motion_data.accel_x, mission_Ctx->motion_data.accel_y, mission_Ctx->motion_data.accel_z,
-           mission_Ctx->motion_data.gyro_x, mission_Ctx->motion_data.gyro_y, mission_Ctx->motion_data.gyro_z);
+           mission_Ctx->motion_data.motionaccel.accel_x, mission_Ctx->motion_data.motionaccel.accel_y, mission_Ctx->motion_data.motionaccel.accel_z,
+           mission_Ctx->motion_data.motiongyro.gyro_x, mission_Ctx->motion_data.motiongyro.gyro_y, mission_Ctx->motion_data.motiongyro.gyro_z);
 }
 
 /**
