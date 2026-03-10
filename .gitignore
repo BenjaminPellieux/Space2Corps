@@ -10,4 +10,4 @@ sdkconfig.*
 commitmsg.txt
 gource.log
 movie.x264.avi
-
+*.mp4

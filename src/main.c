@@ -140,7 +140,7 @@ void control_task(void *pvParameters) {
         }else{
             ESP_LOGE(TAG, "NO IMU DATA");
         }
-
+        display_gps_data();
         // Short delay to prevent watchdog timeout
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }

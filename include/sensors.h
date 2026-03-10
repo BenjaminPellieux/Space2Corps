@@ -106,11 +106,6 @@ typedef struct {
 
 } GPSData;
 
-/**
- * @brief Global sensor data variables
- */
-extern MotionData motion_data;
-extern GPSData gps_data;
 
 /**
  * @brief Initialize UART for GPS

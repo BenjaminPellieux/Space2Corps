@@ -38,13 +38,6 @@ static uint8_t lsm6dsox_addr = LSM6DSOX_ADDR_1;
 uint8_t uart_buffer[BUF_SIZE];
 
 /**
- * @brief Global GPS data structure
- * 
- * Contains all GPS position and status information
- */
-GPSData gps_data = {0};
-
-/**
  * @brief Read bytes from I2C device register
  * 
  * Internal helper function to read data from LSM6DSOX registers.
